@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Gallery</title>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <style>
+        .video-container {
+            width: calc(50% - 10px); /* Adjust as per your layout needs */
+            margin: 5px;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Video Gallery</h1>
+        <div id="video-list" class="video-list"></div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.955.0.min.js"></script> <!-- Adjust the version as needed -->
+    <script>
+        async function fetchVideosFromS3() {
+            AWS.config.update({
+                accessKeyId: 'AKIARTSTZTY5ADAPTSZS',
+                secretAccessKey: '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',
+                region: 'ap-northeast-1'
+            });
+
+            const bucketName = 'hls.karthikshetty.dev';
+            const s3Client = new AWS.S3();
+
+            try {
+                const data = await s3Client.listObjectsV2({ Bucket: bucketName, Delimiter: '/' }).promise();
+
+                if (!data.CommonPrefixes) {
+                    throw new Error('No common prefixes found in S3 response.');
+                }
+
+                const folders = data.CommonPrefixes.map(prefix => {
+                    if (prefix.Prefix) {
+                        return prefix.Prefix.replace('/', ''); // Remove trailing slash
+                    } else {
+                        throw new Error('Prefix property is missing or undefined.');
+                    }
+                });
+
+                const videoList = document.getElementById('video-list');
+
+                // Iterate through each folder
+                for (const folder of folders) {
+                    // List objects in the current folder
+                    const folderObjects = await s3Client.listObjectsV2({ Bucket: bucketName, Prefix: folder }).promise();
+
+                    if (!folderObjects.Contents) {
+                        throw new Error('No contents found in S3 folder objects.');
+                    }
+
+                    const files = folderObjects.Contents.filter(obj => obj.Key !== folder); // Filter out the folder itself
+
+                    // Find the .m3u8 file in the current folder
+                    const videoUrls = files.map(file => `https://s3.ap-northeast-1.amazonaws.com/${bucketName}/${file.Key}`);
+                    const videoUrl = videoUrls.find(url => url.endsWith('.m3u8'));
+
+                    if (videoUrl) {
+                        const videoContainer = document.createElement('div');
+                        videoContainer.classList.add('video-container');
+
+                        // Video.js setup for each video
+                        const videoElement = document.createElement('video');
+                        videoElement.classList.add('video-js', 'vjs-default-skin');
+                        videoElement.setAttribute('controls', '');
+                        videoElement.setAttribute('width', '480');
+                        videoElement.setAttribute('height', '270');
+
+                        const sourceElement = document.createElement('source');
+                        sourceElement.setAttribute('src', videoUrl);
+                        sourceElement.setAttribute('type', 'application/x-mpegURL');
+
+                        videoElement.appendChild(sourceElement);
+                        videoContainer.appendChild(videoElement);
+                        videoList.appendChild(videoContainer);
+
+                        // Initialize Video.js for each video
+                        const player = videojs(videoElement);
+                        player.ready(function () {
+                            this.play(); // Auto-play each video
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching videos from S3:', error);
+            }
+        }
+
+        fetchVideosFromS3();
+    </script>
+</body>
+</html>

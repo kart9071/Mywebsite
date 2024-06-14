@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Upload Video</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .container {
+      max-width: 600px;
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-5">Upload a Video File</h1>
+    <form id="uploadForm" method="post" enctype="multipart/form-data" action="/upload">
+      <div class="form-group">
+        <label for="fileUpload">Choose a video file:</label>
+        <input type="file" name="file" id="fileUpload" class="form-control-file" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Upload</button>
+      <button type="button" id="viewVideos" class="btn btn-secondary ml-2">View Videos</button>
+    </form>
+  </div>
+
+  <!-- Bootstrap JS and custom script -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    // Redirect to videos.html when clicking "View Videos" button
+    document.getElementById('viewVideos').addEventListener('click', function() {
+      window.location.href = '/videos.html';
+    });
+  </script>
+</body>
+</html>
